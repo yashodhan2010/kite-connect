@@ -1,0 +1,5 @@
+venv/
+connect.ipynb
+session.json
+logs/
+config.py
