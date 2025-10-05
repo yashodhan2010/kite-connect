@@ -1,20 +1,16 @@
-import logging
-import sys
 import os
 import csv
 from datetime import datetime
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from connection import connect
+import logging
+from core.connection import connect
 
 TRADE_LOG_FILE = "logs/trading_log.csv"
-ERROR_LOG_FILE = "trading_errors.log"
+ERROR_LOG_FILE = "logs/trading_errors.log"
 
-# Setup logging
 logging.basicConfig(
     filename="logs/trading.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s")
-
 
 def log_trade(action, tradingsymbol, qty, price, order_id, status="SUCCESS"):
     """Log only successful trades to CSV"""
@@ -36,7 +32,7 @@ def log_error(action, tradingsymbol, qty, price, order_id, error_message):
 
 def fetch_order_status(order_id):
     """Fetch status of a given order by ID."""
-    kite = connect()
+    kite =connect()
     try:
         orders = kite.orders()
         for order in orders:

@@ -1,14 +1,11 @@
-import logging
-import sys
 import os
 import json
+import logging
 from kiteconnect import KiteConnect as kc
-from datetime import datetime
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
-
+from datetime import datetime
 # Set logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG,format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Basic constants
 kite = kc(api_key=config.API_KEY)
@@ -28,12 +25,25 @@ def load_token():
             return json.load(f)
     return None
 
-# Request fresh token from user
-def get_request_token():
-    print("⚠️ Saved token expired, need fresh login. Go to the following URL in your browser:")
-    print(kite.login_url())
-    request_token = input("Copy the request token here and press ENTER: ")
-    return request_token
+# Get Login URL
+def get_login_url():
+    """Return Kite login URL"""
+    return kite.login_url()
+
+#  Request fresh token from user
+def generate_access_token(request_token):
+    """Generate and save new access token"""
+   
+    data = kite.generate_session(request_token, api_secret=config.API_SECRET)
+    kite.set_access_token(data["access_token"])
+
+    save_token({
+        "access_token": data["access_token"],
+        "date": datetime.today().strftime("%Y-%m-%d")
+    })
+
+    logging.info("New access token generated and saved")
+    return kite
 
 def connect():
     # Try to reuse existing token if valid
@@ -44,16 +54,5 @@ def connect():
         return kite
 
     # Else require fresh login
-    request_token = get_request_token()
-    data = kite.generate_session(request_token, api_secret=config.API_SECRET)
-    kite.set_access_token(data["access_token"])
-    save_token({
-        "access_token": data["access_token"],
-        "date": datetime.today().strftime("%Y-%m-%d")
-    })
-           
-    logging.info("✅ Successfully connected to Kite Connect and saved new token")
-    return kite
-
-if __name__ == "__main__":
-    connect()
+    else:
+        return None
