@@ -1,5 +1,5 @@
 
-def place_sell_order(symbol, qty):
+def place_sell_order(kite,symbol, qty):
     
     try:
         order_id = kite.place_order(tradingsymbol=symbol,

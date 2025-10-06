@@ -1,7 +1,7 @@
 from core.connection import connect, generate_access_token, get_login_url
 from core.buy import place_buy_order
 from core.sell import place_sell_order
-from core.utils import log_trade, fetch_order_status
+from core.utils import log_trade, fetch_order_status,log_error
 import streamlit as st
 import pandas as pd
 import os
@@ -14,17 +14,18 @@ from datetime import datetime
 import csv
 
 TRADE_LOG_FILE = "logs/trading_log.csv"
-ERROR_LOG_FILE = "trading_errors.log"
+ERROR_LOG_FILE = "logs/trading_errors.log"
 
-# Setup logging
-logging.basicConfig(
-    filename="logs/trading.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s")
+# Handler for error logs
+error_handler = logging.FileHandler("logs/trading_errors.log")
+error_handler.setLevel(logging.ERROR)
+error_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+error_handler.setFormatter(error_format)
 
-
-# Set logging
-logging.basicConfig(level=logging.DEBUG,format="%(asctime)s - %(levelname)s - %(message)s")
+# Root logger setup
+logging.getLogger().handlers = []  # Remove any existing handlers
+logging.getLogger().addHandler(error_handler)
+logging.getLogger().setLevel(logging.ERROR)
 
 # Basic constants
 kite = kc(api_key=config.API_KEY)
@@ -49,6 +50,7 @@ if not st.session_state.kite:
             kite = generate_access_token(request_token)
             st.session_state.kite = kite
             st.success("✅ Successfully connected to Kite!")
+            st.experimental_rerun()
         except Exception as e:
             st.error(f"Failed to generate access token: {e}")
     st.stop()
@@ -72,12 +74,12 @@ if st.button("🚀 Place Order"):
     kite = st.session_state.kite
     try:
         if action == "BUY":
-            order_id = place_buy_order(symbol, qty)
+            order_id = place_buy_order(kite,symbol, qty)
         else:
-            order_id = place_sell_order(symbol, qty)
+            order_id = place_sell_order(kite,symbol, qty)
 
         # Fetch order status
-        status = fetch_order_status(order_id)
+        status = fetch_order_status(kite,order_id)
         order_status = status.get("status") if status else "FAILED"
         executed_price = status.get("price") if status else None
 
@@ -90,14 +92,14 @@ if st.button("🚀 Place Order"):
 
     except Exception as e:
         st.error(f"Order failed: {str(e)}")
-        log_trade(action, symbol, qty, executed_price, None, f"EXCEPTION: {str(e)}")
+        log_error(action, symbol, qty, executed_price, None, f"EXCEPTION: {str(e)}")
 
 # Step 3: Logs
 st.divider()
 st.subheader("📊 Trade Logs")
 
-if os.path.exists("trading_log.csv"):
-    df = pd.read_csv("trading_log.csv")
+if os.path.exists("logs/trading_log.csv"):
+    df = pd.read_csv("logs/trading_log.csv")
     st.dataframe(df.tail(10))
 else:
     st.info("No trades logged yet.")
@@ -105,8 +107,8 @@ else:
 st.divider()
 st.subheader("⚠️ Error Logs")
 
-if os.path.exists("trading_errors.log"):
-    with open("trading_errors.log") as f:
+if os.path.exists("logs/trading_errors.log"):
+    with open("logs/trading_errors.log") as f:
         logs = f.read()
     st.text_area("Error Log", logs, height=200)
 else:

@@ -1,6 +1,6 @@
 
 
-def place_buy_order(symbol, qty):
+def place_buy_order(kite,symbol, qty):
     
     try:
         order_id = kite.place_order(tradingsymbol=symbol,
