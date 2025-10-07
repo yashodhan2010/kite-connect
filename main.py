@@ -50,7 +50,7 @@ if not st.session_state.kite:
             kite = generate_access_token(request_token)
             st.session_state.kite = kite
             st.success("✅ Successfully connected to Kite!")
-            st.experimental_rerun()
+            
         except Exception as e:
             st.error(f"Failed to generate access token: {e}")
     st.stop()

@@ -1,2 +1,3 @@
 kiteconnect
-
+logging
+matplotlib

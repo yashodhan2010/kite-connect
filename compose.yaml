@@ -1,0 +1,6 @@
+services:
+  kiteconnect:
+    image: kiteconnect
+    build:
+      context: .
+      dockerfile: ./Dockerfile
